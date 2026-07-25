@@ -152,7 +152,7 @@ class ComponentiGui:
         app.root.bind_all("<Control-o>", lambda event: app.carica_cartella_raw())
         app.root.bind_all("<Control-q>", lambda event: app.gestisci_chiusura_app())
         app.root.bind_all("<Control-l>", lambda event: app.apri_lightbox())
-        app.root.bind_all("<Escape>", lambda event: app.annulla_zoom())
+        app.root.bind_all("<Escape>", lambda event: app.interazione.annulla_zoom())
 
     @staticmethod
     def crea_tooltip(widget, text):
