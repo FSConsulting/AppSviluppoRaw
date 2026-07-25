@@ -2,7 +2,6 @@
 
 [![Docs Build](https://github.com/FSConsulting/AppSviluppoRaw/actions/workflows/build-docs.yml/badge.svg)](https://github.com/FSConsulting/AppSviluppoRaw/actions/workflows/build-docs.yml)
 
-Replace `OWNER/REPO` in the badge URL with your GitHub repository path to enable the live Actions badge.
 
 Questa cartella contiene la versione `Ver_02` dell'applicazione GUI per lo sviluppo RAW e il ritocco con pennello macchie.
 
