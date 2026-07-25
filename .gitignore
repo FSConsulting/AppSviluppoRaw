@@ -2,6 +2,7 @@
 /*
 !.gitignore
 !.github/
+!README.md
 !Ver_02/
 
 # Allow Ver_02 contents, but ignore common build and temp files inside it.
