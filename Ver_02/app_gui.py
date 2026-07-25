@@ -330,7 +330,16 @@ class AppSviluppoRaw:
         for elemento in self.canvas_foto.find_withtag("indicatore_cerchio"): self.canvas_foto.delete(elemento)
         if not self.img_anteprima_base or not self.ritocco.attivo: return
         w_orig, h_orig = self.img_anteprima_base.size
-        for (mx, my, sx, sy, raggio) in self.ritocco.macchie:
+        for macchia in self.ritocco.macchie:
+            if len(macchia) == 5:
+                mx, my, sx, sy, raggio = macchia
+            elif len(macchia) == 3:
+                mx, my, raggio = macchia
+                sx = max(0, mx - raggio * 2)
+                sy = my
+            else:
+                continue
+
             rx, ry = self.ritocco.native_to_screen_coords(mx, my)
             rsx, rsy = self.ritocco.native_to_screen_coords(sx, sy)
             params = self.ritocco._ottieni_parametri_trasformazione()

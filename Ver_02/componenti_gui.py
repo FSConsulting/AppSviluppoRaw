@@ -69,7 +69,7 @@ class ComponentiGui:
     @staticmethod
     def crea_layout(app):
         """Crea un pannello sinistro interamente scorrevole tramite scrollbar."""
-        app.root.option_add("*Font", "Segoe UI 10")
+        app.root.option_add("*Font", "{Segoe UI} 10")
         app.root.minsize(1100, 720)
         app.root.columnconfigure(0, weight=0, minsize=380)
         app.root.columnconfigure(1, weight=1)
@@ -139,7 +139,7 @@ class ComponentiGui:
         menubar.add_cascade(label="File", menu=file_menu)
 
         view_menu = tk.Menu(menubar, tearoff=0)
-        view_menu.add_command(label="Reset Vista / Annulla Zoom", accelerator="Esc", command=app.annulla_zoom)
+        view_menu.add_command(label="Reset Vista / Annulla Zoom", accelerator="Esc", command=app.interazione.annulla_zoom)
         view_menu.add_command(label="Lightbox", accelerator="Ctrl+L", command=app.apri_lightbox)
         menubar.add_cascade(label="Vista", menu=view_menu)
 
@@ -265,7 +265,7 @@ class ComponentiGui:
         app.btn_lightbox.pack(fill=tk.X, pady=3)
         ComponentiGui.crea_tooltip(app.btn_lightbox, "Apri un overlay di anteprima a schermo intero dell'immagine corrente.")
 
-        ttk.Button(sec_azione, text="🔄 Reset Vista / Annulla Zoom", command=app.annulla_zoom).pack(fill=tk.X, pady=3)
+        ttk.Button(sec_azione, text="🔄 Reset Vista / Annulla Zoom", command=app.interazione.annulla_zoom).pack(fill=tk.X, pady=3)
 
         app.var_esportare = tk.BooleanVar(value=True)
         chk_batch = ttk.Checkbutton(sec_azione, text="Seleziona Foto per Batch", variable=app.var_esportare,

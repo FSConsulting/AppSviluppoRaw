@@ -203,14 +203,26 @@ class RitoccoManager:
             soglia = self.raggio_pennello * 1.5
 
             for i, m in enumerate(self.macchie):
-                _, _, sx, sy, _ = m
+                if len(m) == 5:
+                    _, _, sx, sy, _ = m
+                elif len(m) == 3:
+                    _, _, raggio = m
+                    sx = max(0.0, m[0] - raggio * 2)
+                    sy = m[1]
+                else:
+                    continue
                 if ((sx - real_x)**2 + (sy - real_y)**2)**0.5 < soglia:
                     self.indice_macchia_in_trascinamento = i
                     return 
 
             macchia_da_rimuovere = None
             for m in self.macchie:
-                dx, dy, _, _, _ = m
+                if len(m) == 5:
+                    dx, dy, _, _, _ = m
+                elif len(m) == 3:
+                    dx, dy, _ = m
+                else:
+                    continue
                 if ((dx - real_x)**2 + (dy - real_y)**2)**0.5 < soglia:
                     macchia_da_rimuovere = m
                     break
