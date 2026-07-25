@@ -27,6 +27,7 @@ Ver_02/Thumbs.db
 # Ignore root temporary and media files
 *.mp4
 *.srt
+_chiusura_ultima_Chat.md
 
 # Ignore the workspace virtual environment at root
 /ai_env/
