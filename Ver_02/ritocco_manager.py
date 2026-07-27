@@ -270,3 +270,17 @@ class RitoccoManager:
             self.indice_macchia_in_trascinamento = -1
             self.app.disegna_indicatori_macchie()
             self.app.aggiorna_anteprima()
+
+    def annulla_ultima_macchia(self):
+        """Rimuove l'ultima macchia aggiunta (Undo / Ctrl+Z)."""
+        if self.macchie:
+            self.macchie.pop()
+            self.macchia_attiva_dest = None
+            self.app.disegna_indicatori_macchie()
+            self.app.aggiorna_anteprima()
+            if hasattr(self.app, 'salva_stato_corrente'):
+                self.app.salva_stato_corrente()
+            self.app.set_status("Ultima macchia annullata (Ctrl+Z).")
+        else:
+            self.app.set_status("Nessuna macchia da annullare.")
+

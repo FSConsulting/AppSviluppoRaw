@@ -52,9 +52,9 @@ class ToolTip:
         self.tipwindow = tw = tk.Toplevel(self.widget)
         tw.wm_overrideredirect(True)
         tw.wm_geometry(f"+{x}+{y}")
-        label = tk.Label(tw, text=self.text, justify=tk.LEFT, background="#ffffe0",
+        label = tk.Label(tw, text=self.text, justify=tk.LEFT, background="#2d2d30", foreground="#ffffff",
                          relief=tk.SOLID, borderwidth=1, font=("Segoe UI", 9))
-        label.pack(ipadx=4, ipady=2)
+        label.pack(ipadx=6, ipady=3)
 
     def hide(self, event=None):
         self.unschedule()
@@ -67,8 +67,53 @@ class ComponentiGui:
     """Gestore del layout visivo scorrevole organizzato in LabelFrame."""
 
     @staticmethod
+    def applica_tema_scuro(app):
+        """Configura uno stile Darkroom professionale ed elegante per tutti i widget TTK."""
+        BG_MAIN = "#1e1e1e"
+        BG_PANEL = "#252526"
+        BG_WIDGET = "#333337"
+        BG_ACTIVE = "#007acc"
+        FG_TEXT = "#e1e1e1"
+        BORDER_COL = "#3e3e42"
+
+        app.root.configure(bg=BG_MAIN)
+        style = ttk.Style()
+        try:
+            style.theme_use('clam')
+        except Exception:
+            pass
+
+        style.configure(".", background=BG_PANEL, foreground=FG_TEXT, font=("Segoe UI", 10))
+        style.configure("TFrame", background=BG_PANEL)
+        style.configure("TLabel", background=BG_PANEL, foreground=FG_TEXT)
+
+        style.configure("TButton", background=BG_WIDGET, foreground="#ffffff", bordercolor=BORDER_COL, borderwidth=1, focuscolor="none", padding=(5, 3))
+        style.map("TButton",
+                  background=[("active", BG_ACTIVE), ("disabled", "#222225")],
+                  foreground=[("disabled", "#555555")],
+                  bordercolor=[("active", BG_ACTIVE)])
+
+        style.configure("TCheckbutton", background=BG_PANEL, foreground=FG_TEXT)
+        style.map("TCheckbutton",
+                  background=[("active", BG_PANEL)],
+                  foreground=[("active", "#ffffff")])
+
+        style.configure("TCombobox", fieldbackground=BG_MAIN, background=BG_WIDGET, foreground="#ffffff", arrowcolor="#ffffff", bordercolor=BORDER_COL)
+        style.map("TCombobox",
+                  fieldbackground=[("readonly", BG_MAIN)],
+                  foreground=[("readonly", "#ffffff")])
+
+        style.configure("TScale", background=BG_PANEL, troughcolor=BG_MAIN, sliderlength=14, borderwidth=0)
+        style.map("TScale", background=[("active", BG_PANEL)])
+
+        style.configure("Vertical.TScrollbar", background=BG_WIDGET, troughcolor=BG_MAIN, bordercolor=BG_MAIN, arrowcolor="#cccccc")
+        style.map("Vertical.TScrollbar", background=[("active", BG_ACTIVE)])
+
+    @staticmethod
     def crea_layout(app):
-        """Crea un pannello sinistro interamente scorrevole tramite scrollbar."""
+        """Crea un pannello sinistro interamente scorrevole tramite scrollbar in stile Dark Mode."""
+        ComponentiGui.applica_tema_scuro(app)
+
         app.root.option_add("*Font", "{Segoe UI} 10")
         app.root.minsize(1100, 720)
         app.root.columnconfigure(0, weight=0, minsize=380)
@@ -77,19 +122,19 @@ class ComponentiGui:
         app.root.rowconfigure(1, weight=0)
 
         # Contenitore principale sinistro
-        app.pan_sinistro_root = ttk.Frame(app.root, relief=tk.SUNKEN)
+        app.pan_sinistro_root = ttk.Frame(app.root)
         app.pan_sinistro_root.grid(row=0, column=0, sticky="nsew")
         app.pan_sinistro_root.rowconfigure(0, weight=1)
         app.pan_sinistro_root.columnconfigure(0, weight=1)
 
-        # Canvas interno e Scrollbar per il pannello controlli
-        canvas_scroll = tk.Canvas(app.pan_sinistro_root, borderwidth=0, highlightthickness=0)
+        # Canvas interno con sfondo scuro e Scrollbar per il pannello controlli
+        canvas_scroll = tk.Canvas(app.pan_sinistro_root, bg="#252526", borderwidth=0, highlightthickness=0)
         scrollbar = ttk.Scrollbar(app.pan_sinistro_root, orient="vertical", command=canvas_scroll.yview)
         
         app.canvas_controlli = canvas_scroll
         
         # Frame effettivo che conterrà i widget inserito nel canvas
-        app.pan_sinistro = ttk.Frame(canvas_scroll, padding="10")
+        app.pan_sinistro = ttk.Frame(canvas_scroll, padding=(8, 2, 8, 8))
         
         # Configurazione del meccanismo di scorrimento della pagina
         app.pan_sinistro.bind(
@@ -117,15 +162,16 @@ class ComponentiGui:
         app.pan_destro.columnconfigure(0, weight=1)
         app.pan_destro.rowconfigure(0, weight=1)
 
-        app.canvas_foto = tk.Canvas(app.pan_destro, bg="#252525", highlightthickness=0)
+        app.canvas_foto = tk.Canvas(app.pan_destro, bg="#1e1e1e", highlightthickness=0)
         app.canvas_foto.grid(row=0, column=0, sticky="nsew")
         app._debounce_id = None
 
         # Barra di stato nella parte inferiore
-        app.status_bar = ttk.Frame(app.root, relief=tk.SUNKEN, padding=(5, 2))
+        app.status_bar = ttk.Frame(app.root, padding=(8, 4))
         app.status_bar.grid(row=1, column=0, columnspan=2, sticky="ew")
-        app.lbl_stato = ttk.Label(app.status_bar, text="Pronto", anchor=tk.W)
+        app.lbl_stato = ttk.Label(app.status_bar, text="Pronto", anchor=tk.W, foreground="#aaaaaa")
         app.lbl_stato.pack(fill=tk.X)
+
 
     @staticmethod
     def crea_menu(app):
@@ -138,20 +184,32 @@ class ComponentiGui:
         file_menu.add_command(label="Esci", accelerator="Ctrl+Q", command=app.gestisci_chiusura_app)
         menubar.add_cascade(label="File", menu=file_menu)
 
+        edit_menu = tk.Menu(menubar, tearoff=0)
+        edit_menu.add_command(label="Annulla Ultima Macchia", accelerator="Ctrl+Z", command=lambda: app.ritocco.annulla_ultima_macchia())
+        edit_menu.add_command(label="Attiva/Disattiva Pennello Macchie", accelerator="B", command=app.attiva_strumento_macchie)
+        menubar.add_cascade(label="Modifica", menu=edit_menu)
+
         view_menu = tk.Menu(menubar, tearoff=0)
         view_menu.add_command(label="Reset Vista / Annulla Zoom", accelerator="Esc", command=app.interazione.annulla_zoom)
         view_menu.add_command(label="Lightbox", accelerator="Ctrl+L", command=app.apri_lightbox)
         menubar.add_cascade(label="Vista", menu=view_menu)
 
         help_menu = tk.Menu(menubar, tearoff=0)
-        help_menu.add_command(label="Guida Rapida", command=lambda: app.set_status("Doppio click: zoom | Esc: torna normale | Pennello macchie: correggi difetti."))
+        help_menu.add_command(label="Guida Rapida", command=lambda: app.set_status("Doppio click: zoom | Esc: torna normale | Pennello (B): correggi macchie | Ctrl+Z: annulla macchia."))
         help_menu.add_separator()
         help_menu.add_command(label="Informazioni", command=lambda: messagebox.showinfo("Informazioni", "Nikon NEF Batch Editor - Ver_02\nInterfaccia di sviluppo RAW e ritocco."))
         menubar.add_cascade(label="Aiuto", menu=help_menu)
 
         app.root.bind_all("<Control-o>", lambda event: app.carica_cartella_raw())
+        app.root.bind_all("<Control-O>", lambda event: app.carica_cartella_raw())
         app.root.bind_all("<Control-q>", lambda event: app.gestisci_chiusura_app())
+        app.root.bind_all("<Control-Q>", lambda event: app.gestisci_chiusura_app())
         app.root.bind_all("<Control-l>", lambda event: app.apri_lightbox())
+        app.root.bind_all("<Control-L>", lambda event: app.apri_lightbox())
+        app.root.bind_all("<Control-z>", lambda event: app.ritocco.annulla_ultima_macchia())
+        app.root.bind_all("<Control-Z>", lambda event: app.ritocco.annulla_ultima_macchia())
+        app.root.bind_all("<b>", lambda event: app.attiva_strumento_macchie())
+        app.root.bind_all("<B>", lambda event: app.attiva_strumento_macchie())
         app.root.bind_all("<Escape>", lambda event: app.interazione.annulla_zoom())
 
     @staticmethod
@@ -166,10 +224,10 @@ class ComponentiGui:
         app._debounce_id = app.root.after(150, app.aggiorna_anteprima)
 
     @staticmethod
-    def crea_sezione_collassabile(parent, titolo, builder, espansa=False):
+    def crea_sezione_collassabile(parent, titolo, builder, espansa=True):
         """Crea una sezione con intestazione cliccabile e contenuto espandibile."""
-        outer = ttk.Frame(parent, padding=(0, 0, 0, 6))
-        outer.pack(fill=tk.X, pady=4)
+        outer = ttk.Frame(parent, padding=(0, 0, 0, 4))
+        outer.pack(fill=tk.X, pady=(2, 4))
 
         header = ttk.Frame(outer)
         header.pack(fill=tk.X)
@@ -189,9 +247,11 @@ class ComponentiGui:
         btn_toggle = ttk.Button(header, text="▼" if espansa else "▶", width=2, command=toggle_section)
         btn_toggle.pack(side=tk.LEFT)
 
-        ttk.Label(header, text=titolo, font=("Segoe UI", 10, "bold")).pack(side=tk.LEFT, padx=(6, 0))
+        lbl_titolo = ttk.Label(header, text=titolo, font=("Segoe UI", 10, "bold"), cursor="hand2")
+        lbl_titolo.pack(side=tk.LEFT, padx=(6, 0))
+        lbl_titolo.bind("<Button-1>", lambda e: toggle_section())
 
-        content = ttk.Frame(outer, padding=(4, 6, 0, 0))
+        content = ttk.Frame(outer, padding=(4, 4, 0, 0))
         if espansa:
             content.pack(fill=tk.X)
         else:
@@ -205,15 +265,32 @@ class ComponentiGui:
         """Genera i widget divisi in sezioni collassabili ordinate."""
 
         def aggiungi_slider(contenitore, label, min_v, max_v, def_v, fmt="{:.1f}"):
-            ttk.Label(contenitore, text=label).pack(anchor=tk.W, pady=(4, 0))
+            frame_lbl = ttk.Frame(contenitore)
+            frame_lbl.pack(fill=tk.X, pady=(3, 0))
+            
+            lbl_title = ttk.Label(frame_lbl, text=label, cursor="hand2")
+            lbl_title.pack(side=tk.LEFT)
+
             frame_slider = ttk.Frame(contenitore)
-            frame_slider.pack(fill=tk.X, pady=(0, 4))
+            frame_slider.pack(fill=tk.X, pady=(0, 3))
 
             sld = ttk.Scale(frame_slider, from_=min_v, to=max_v, value=def_v)
             sld.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
             valore_var = tk.StringVar(value=fmt.format(def_v))
-            ttk.Label(frame_slider, textvariable=valore_var, width=8, anchor=tk.E).pack(side=tk.LEFT, padx=(8, 0))
+            ttk.Label(frame_slider, textvariable=valore_var, width=6, anchor=tk.E).pack(side=tk.LEFT, padx=(4, 2))
+
+            def reset_valore():
+                sld.set(def_v)
+                valore_var.set(fmt.format(def_v))
+                ComponentiGui.pianifica_aggiornamento_ottimizzato(app)
+
+            lbl_title.bind("<Double-Button-1>", lambda e: reset_valore())
+            ComponentiGui.crea_tooltip(lbl_title, f"Doppio click per resettare a {fmt.format(def_v)}")
+
+            btn_reset = ttk.Button(frame_slider, text="↺", width=2, command=reset_valore)
+            btn_reset.pack(side=tk.LEFT, padx=(2, 0))
+            ComponentiGui.crea_tooltip(btn_reset, f"Ripristina valore predefinito ({fmt.format(def_v)})")
 
             def on_slider_change(v):
                 valore_var.set(fmt.format(float(v)))
@@ -222,12 +299,12 @@ class ComponentiGui:
             sld.configure(command=on_slider_change)
             return sld
 
-        # --- SEZIONE 1: FILTRO E NAVIGAZIONE ---
+        # --- SEZIONE 1: FILTRO E NAVIGAZIONE --- (Aperta)
         ComponentiGui.crea_sezione_collassabile(
             app.pan_sinistro,
             "🔍 Filtra Visualizzazione",
             lambda sec_file: [
-                ttk.Label(sec_file, text="🔍 Filtra Visualizzazione:").pack(anchor=tk.W, pady=(4, 0)),
+                ttk.Label(sec_file, text="Stato Filtro:").pack(anchor=tk.W, pady=(2, 0)),
                 setattr(app, 'cmb_filtro', ttk.Combobox(sec_file, state="readonly", values=["Tutti i RAW", "Solo selezionati", "Solo NON selezionati"])),
                 app.cmb_filtro.set("Tutti i RAW"),
                 app.cmb_filtro.pack(fill=tk.X, pady=(0, 4)),
@@ -235,7 +312,7 @@ class ComponentiGui:
                 setattr(app, 'cmb_scelta_foto', ttk.Combobox(sec_file, state="readonly")),
                 app.cmb_scelta_foto.pack(fill=tk.X, pady=(0, 4)),
                 setattr(app, 'lbl_info_file', ttk.Label(sec_file, text="Nessun file caricato", wraplength=280, justify=tk.LEFT)),
-                app.lbl_info_file.pack(fill=tk.X, pady=6),
+                app.lbl_info_file.pack(fill=tk.X, pady=4),
                 (lambda: (setattr(app, 'btn_first', ttk.Button(sec_file, text="⏮", width=4, state=tk.DISABLED, command=app.foto_prima)),
                           setattr(app, 'btn_prev', ttk.Button(sec_file, text="◀ Prec.", state=tk.DISABLED, command=app.foto_precedente)),
                           setattr(app, 'btn_next', ttk.Button(sec_file, text="Succ. ▶", state=tk.DISABLED, command=app.foto_successiva)),
@@ -247,10 +324,10 @@ class ComponentiGui:
                 app.btn_next.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=2),
                 app.btn_last.pack(side=tk.LEFT, padx=(2, 0)),
             ][-1],
-            espansa=False,
+            espansa=True,
         )
 
-        # --- SEZIONE 2: SVILUPPO E COLORE ---
+        # --- SEZIONE 2: SVILUPPO E COLORE --- (Aperta)
         ComponentiGui.crea_sezione_collassabile(
             app.pan_sinistro,
             "🎨 Sviluppo e Colore",
@@ -261,15 +338,15 @@ class ComponentiGui:
                 setattr(app, 'sld_brightness', aggiungi_slider(sec_colore, "Luminosità", 0.5, 2.0, 1.0)),
                 setattr(app, 'sld_contrast', aggiungi_slider(sec_colore, "Contrasto", 0.5, 2.0, 1.0)),
                 setattr(app, 'sld_saturation', aggiungi_slider(sec_colore, "Saturazione", 0.0, 2.0, 1.0)),
-                setattr(app, 'sld_sharpness', aggiungi_slider(sec_colore, "Nitidezza (Sharpness)", 100, 300, 100)),
+                setattr(app, 'sld_sharpness', aggiungi_slider(sec_colore, "Nitidezza (Sharpness)", 100, 300, 100, fmt="{:.0f}")),
                 setattr(app, 'sld_denoise', aggiungi_slider(sec_colore, "Riduzione Disturbo (Denoise)", 0.0, 5.0, 0.0)),
                 setattr(app, 'var_bw', tk.BooleanVar(value=False)),
                 ttk.Checkbutton(sec_colore, text="Converti in Bianco e Nero", variable=app.var_bw, command=app.gestisci_modalita_colore).pack(fill=tk.X, pady=4),
             ][-1],
-            espansa=False,
+            espansa=True,
         )
 
-        # --- SEZIONE 3: GEOMETRIA E RITAGLIO ---
+        # --- SEZIONE 3: GEOMETRIA E RITAGLIO --- (Chiusa)
         ComponentiGui.crea_sezione_collassabile(
             app.pan_sinistro,
             "📐 Geometria e Ritaglio",
@@ -282,18 +359,18 @@ class ComponentiGui:
             espansa=False,
         )
 
-        # --- SEZIONE 4: AZIONI DI OUTPUT ---
+        # --- SEZIONE 4: AZIONI DI OUTPUT --- (Chiusa)
         ComponentiGui.crea_sezione_collassabile(
             app.pan_sinistro,
             "⚙️ Azioni di Output",
             lambda sec_azione: [
-                setattr(app, 'btn_macchie', ttk.Button(sec_azione, text="🧹 Attiva Pennello Macchie", command=app.attiva_strumento_macchie)),
+                setattr(app, 'btn_macchie', ttk.Button(sec_azione, text="🧹 Attiva Pennello Macchie (B)", command=app.attiva_strumento_macchie)),
                 app.btn_macchie.pack(fill=tk.X, pady=3),
-                ComponentiGui.crea_tooltip(app.btn_macchie, "Attiva/disattiva lo strumento penna per ritocco macchie."),
-                setattr(app, 'btn_lightbox', ttk.Button(sec_azione, text="🖼️ Anteprima Lightbox", command=app.apri_lightbox)),
+                ComponentiGui.crea_tooltip(app.btn_macchie, "Attiva/disattiva lo strumento penna per ritocco macchie (Scorciatoia: B). Ctrl+Z per annullare."),
+                setattr(app, 'btn_lightbox', ttk.Button(sec_azione, text="🖼️ Anteprima Lightbox (Ctrl+L)", command=app.apri_lightbox)),
                 app.btn_lightbox.pack(fill=tk.X, pady=3),
                 ComponentiGui.crea_tooltip(app.btn_lightbox, "Apri un overlay di anteprima a schermo intero dell'immagine corrente."),
-                ttk.Button(sec_azione, text="🔄 Reset Vista / Annulla Zoom", command=app.interazione.annulla_zoom).pack(fill=tk.X, pady=3),
+                ttk.Button(sec_azione, text="🔄 Reset Vista / Annulla Zoom (Esc)", command=app.interazione.annulla_zoom).pack(fill=tk.X, pady=3),
                 setattr(app, 'var_esportare', tk.BooleanVar(value=True)),
                 (lambda: (chk_batch := ttk.Checkbutton(sec_azione, text="Seleziona Foto per Batch", variable=app.var_esportare, command=app.gestisci_interazione_spunta), chk_batch.pack(fill=tk.X, pady=4), ComponentiGui.crea_tooltip(chk_batch, "Marca o demarca la foto corrente per le operazioni batch."), chk_batch))(),
                 (lambda: (btn_salva := ttk.Button(sec_azione, text="💾 Salva Foto Corrente...", command=app.apri_dialog_esportazione_singola), btn_salva.pack(fill=tk.X, pady=3), ComponentiGui.crea_tooltip(btn_salva, "Salva l'immagine corrente con i parametri selezionati."), btn_salva))(),
@@ -302,10 +379,12 @@ class ComponentiGui:
             espansa=False,
         )
 
-        # --- SEZIONE 5: GUIDA RAPIDA ---
+        # --- SEZIONE 5: GUIDA RAPIDA --- (Chiusa)
         ComponentiGui.crea_sezione_collassabile(
             app.pan_sinistro,
-            "🛈 Guida Rapida",
-            lambda sec_help: ttk.Label(sec_help, text="Doppio click: zoom | Esc: torna normale | Pennello macchie: correggi difetti | Usa i slider per regolare la resa visiva.", wraplength=300, justify=tk.LEFT).pack(fill=tk.X),
+            "🛈 Guida Rapida & Scorciatoie",
+            lambda sec_help: ttk.Label(sec_help, text="• Doppio click: Zoom 100% / Reset\n• Drag sul Canvas: Sposta vista zoomata\n• Tastiera ◄ / ►: Foto prec / succ\n• B: Attiva/Disattiva Pennello macchie\n• Ctrl+Z: Annulla ultima macchia\n• ↺ o Doppio Click sullo Slider: Reset valore", wraplength=300, justify=tk.LEFT).pack(fill=tk.X),
             espansa=False,
         )
+
+

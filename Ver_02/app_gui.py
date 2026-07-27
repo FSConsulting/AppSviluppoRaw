@@ -109,6 +109,19 @@ class AppSviluppoRaw:
         ComponentiGui.crea_controlli(self)
         self.configura_bindings()
         self.root.protocol("WM_DELETE_WINDOW", self.gestisci_chiusura_app)
+        self.portare_in_primo_piano()
+
+    def portare_in_primo_piano(self):
+        """Forza la finestra principale dell'applicazione in primo piano e con focus visibile."""
+        try:
+            self.root.deiconify()
+            self.root.lift()
+            self.root.attributes("-topmost", True)
+            self.root.after(150, lambda: self.root.attributes("-topmost", False))
+            self.root.focus_force()
+        except Exception:
+            pass
+
         
     def configure_bindings(self):
         self.configura_bindings()
@@ -261,11 +274,15 @@ class AppSviluppoRaw:
         canvas_h = max(1, self.canvas_foto.winfo_height())
 
         if self.in_zoom:
+            self.x_offset_canvas = 0
+            self.y_offset_canvas = 0
             self.canvas_foto.coords(item_id, 0, 0)
             return
 
         x_pos = max(0, (canvas_w - self.w_visualizzato) // 2)
         y_pos = max(0, (canvas_h - self.h_visualizzato) // 2)
+        self.x_offset_canvas = x_pos
+        self.y_offset_canvas = y_pos
         self.canvas_foto.coords(item_id, x_pos, y_pos)
         self.canvas_foto.config(scrollregion=(0, 0, max(self.w_visualizzato, canvas_w), max(self.h_visualizzato, canvas_h)))
 
@@ -344,9 +361,8 @@ class AppSviluppoRaw:
             self.root.after(0, self._renderizza_anteprima_gui, img_ant, w_v, h_v)
 
     def _renderizza_anteprima_gui(self, img_ant, w_v, h_v):
+
         self.w_visualizzato, self.h_visualizzato = w_v, h_v
-        self.x_offset_canvas = 0
-        self.y_offset_canvas = 0
         self.canvas_foto.unbind("<Configure>")
         for elem in self.canvas_foto.find_all():
             if elem != self.ritocco.id_cursore_mobile: self.canvas_foto.delete(elem)
@@ -357,11 +373,15 @@ class AppSviluppoRaw:
         self.tk_foto = ImageTk.PhotoImage(img_ant)
 
         if self.in_zoom:
+            self.x_offset_canvas = 0
+            self.y_offset_canvas = 0
             self.canvas_foto.create_image(0, 0, image=self.tk_foto, anchor=tk.NW, tags="immagine_anteprima")
             self.root.after(10, self._esegui_centratura_post_render)
         else:
             x_pos = max(0, (canvas_w - w_v) // 2)
             y_pos = max(0, (canvas_h - h_v) // 2)
+            self.x_offset_canvas = x_pos
+            self.y_offset_canvas = y_pos
             self.canvas_foto.create_image(x_pos, y_pos, image=self.tk_foto, anchor=tk.NW, tags="immagine_anteprima")
             self.set_status("Anteprima aggiornata")
 
@@ -370,8 +390,8 @@ class AppSviluppoRaw:
         self.canvas_foto.bind("<Configure>", self.gestisci_ridimensionamento_finestra)
 
     def _esegui_centratura_post_render(self):
-        w_win = self.canvas_foto.winfo_width()
-        h_win = self.canvas_foto.winfo_height()
+        w_win = max(1, self.canvas_foto.winfo_width())
+        h_win = max(1, self.canvas_foto.winfo_height())
         pixel_x = (self.zoom_pct_x * self.w_visualizzato)
         pixel_y = (self.zoom_pct_y * self.h_visualizzato)
         target_x = pixel_x - (w_win / 2)
@@ -380,13 +400,27 @@ class AppSviluppoRaw:
         if len(scrollregion) == 4:
             totale_w = float(scrollregion[2])
             totale_h = float(scrollregion[3])
-            self.canvas_foto.xview_moveto(max(0.0, target_x / totale_w))
-            self.canvas_foto.yview_moveto(max(0.0, target_y / totale_h))
+            moveto_x = max(0.0, min(1.0, target_x / totale_w)) if totale_w > 0 else 0.0
+            moveto_y = max(0.0, min(1.0, target_y / totale_h)) if totale_h > 0 else 0.0
+            self.canvas_foto.xview_moveto(moveto_x)
+            self.canvas_foto.yview_moveto(moveto_y)
+
 
     def disegna_indicatorie_macchie(self): self.disegna_indicatori_macchie()
 
     def disegna_indicatori_macchie(self):
         for elemento in self.canvas_foto.find_withtag("indicatore_cerchio"): self.canvas_foto.delete(elemento)
+        for elemento in self.canvas_foto.find_withtag("badge_overlay"): self.canvas_foto.delete(elemento)
+
+        if self.ritocco.attivo:
+            msg = f"🧹 PENNELLO MACCHIE (Raggio: {int(self.ritocco.raggio_pennello)}px) | Ctrl+Z: Annulla | B: Disattiva"
+            self.canvas_foto.create_rectangle(12, 12, 540, 38, fill="#2b0000", outline="#ff4444", width=1, tags="badge_overlay")
+            self.canvas_foto.create_text(20, 25, text=msg, fill="#ff8888", anchor=tk.W, font=("Segoe UI", 9, "bold"), tags="badge_overlay")
+        elif self.in_zoom:
+            msg = "🔍 ZOOM 100% ATTIVO - ESC o Doppio Click per Annullare"
+            self.canvas_foto.create_rectangle(12, 12, 380, 38, fill="#001b2e", outline="#00aaff", width=1, tags="badge_overlay")
+            self.canvas_foto.create_text(20, 25, text=msg, fill="#66ccff", anchor=tk.W, font=("Segoe UI", 9, "bold"), tags="badge_overlay")
+
         if not self.img_anteprima_base or not self.ritocco.attivo: return
         w_orig, h_orig = self.img_anteprima_base.size
         for macchia in self.ritocco.macchie:
@@ -408,6 +442,7 @@ class AppSviluppoRaw:
             self.canvas_foto.create_oval(rx - rad_vis, ry - rad_vis, rx + rad_vis, ry + rad_vis, outline="#ff3333", width=2, tags="indicatore_cerchio")
             self.canvas_foto.create_oval(rsx - rad_vis, rsy - rad_vis, rsx + rad_vis, rsy + rad_vis, outline="#00bfff", width=1, tags="indicatore_cerchio")
             self.canvas_foto.create_line(rx, ry, rsx, rsy, fill="#aaaaaa", dash=(2, 2), tags="indicatore_cerchio")
+
 
     def _renderizza_lightbox(self):
         if not hasattr(self, 'lightbox_window') or not self.lightbox_window.winfo_exists():
